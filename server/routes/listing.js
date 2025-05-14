@@ -135,4 +135,37 @@ router.get("/:listingId", async (req, res) => {
   }
 })
 
+// ⭐ Submit a Review
+router.post("/:listingId/review", async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const { customerId, rating, comment } = req.body;
+
+    const listing = await Listing.findById(listingId);
+    listing.reviews.push({ customerId, rating, comment });
+    await listing.save();
+
+    res.status(200).json({ message: "Review added", reviews: listing.reviews });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ⚠️ Report Listing
+router.post("/:listingId/report", async (req, res) => {
+  try {
+    const { listingId } = req.params;
+    const { reporterId, reason } = req.body;
+
+    const listing = await Listing.findById(listingId);
+    listing.reports.push({ reporterId, reason });
+    await listing.save();
+
+    res.status(200).json({ message: "Report submitted", reports: listing.reports });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router

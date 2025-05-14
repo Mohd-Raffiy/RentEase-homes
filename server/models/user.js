@@ -19,6 +19,10 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    mobileNumber: {
+      type: String,
+      required: true,
+    },
     profileImagePath: {
       type: String,
       default: "",

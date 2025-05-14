@@ -53,8 +53,8 @@ const PaymentPage = () => {
           <p><strong>Location:</strong> {listing.city}, {listing.province}, {listing.country}</p>
           <p><strong>Stay:</strong> {bookingForm.startDate} to {bookingForm.endDate}</p>
           <p><strong>Nights:</strong> {dayCount}</p>
-          <p><strong>Price per night:</strong> ${listing.price}</p>
-          <p><strong>Total:</strong> ${bookingForm.totalPrice}</p>
+          <p><strong>Price per night:</strong> ₹{listing.price}</p>
+          <p><strong>Total:</strong> ₹{bookingForm.totalPrice}</p>
         </div>
 
         <button className="pay-btn" onClick={handleConfirmPayment} disabled={loading}>

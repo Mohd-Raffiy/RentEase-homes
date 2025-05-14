@@ -21,7 +21,7 @@ const upload = multer({ storage });
 router.post("/register", upload.single("profileImage"), async (req, res) => {
   try {
     /* Take all information from the form */
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, mobileNumber } = req.body;
 
     /* The uploaded file is available as req.file */
     const profileImage = req.file;
@@ -49,6 +49,7 @@ router.post("/register", upload.single("profileImage"), async (req, res) => {
       lastName,
       email,
       password: hashedPassword,
+      mobileNumber,
       profileImagePath,
     });
 
@@ -96,5 +97,32 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// In-memory OTP store (for demo purposes)
+let otpStore = {};
+
+router.post("/send-otp", (req, res) => {
+  const { mobileNumber } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+
+  otpStore[mobileNumber] = otp;
+
+  // Just log OTP instead of sending SMS
+  console.log(`Simulated OTP for ${mobileNumber}: ${otp}`);
+
+  res.status(200).json({ message: "OTP sent successfully (simulated)." });
+});
+
+router.post("/verify-otp", (req, res) => {
+  const { mobileNumber, otp } = req.body;
+
+  if (otpStore[mobileNumber] === otp) {
+    delete otpStore[mobileNumber]; // Remove OTP after verification
+    return res.status(200).json({ message: "OTP verified successfully." });
+  }
+
+  res.status(400).json({ message: "Invalid OTP!" });
+});
+
 
 module.exports = router
