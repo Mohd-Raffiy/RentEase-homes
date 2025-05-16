@@ -5,16 +5,19 @@ import { categories, types, facilities } from "../data";
 import { RemoveCircleOutline, AddCircleOutline } from "@mui/icons-material";
 import variables from "../styles/variables.scss";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-import { IoIosImages } from "react-icons/io";
 import { useState,useEffect } from "react";
 import { BiTrash } from "react-icons/bi";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useParams,useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 
 const CreateListing = () => {
+  
   const [category, setCategory] = useState("");
   const [type, setType] = useState("");
+  const [listingData, setListingData] = useState(null);
+  const [photos, setPhotos] = useState([]);
+
 
   /* LOCATION */
   const [formLocation, setFormLocation] = useState({
@@ -43,17 +46,16 @@ const CreateListing = () => {
   const [amenities, setAmenities] = useState([]);
 
   const handleSelectAmenities = (facility) => {
-    if (amenities.includes(facility)) {
-      setAmenities((prevAmenities) =>
-        prevAmenities.filter((option) => option !== facility)
-      );
-    } else {
-      setAmenities((prev) => [...prev, facility]);
-    }
-  };
+  setListingData((prev) => ({
+    ...prev,
+    amenities: prev.amenities.includes(facility)
+      ? prev.amenities.filter((a) => a !== facility)
+      : [...prev.amenities, facility],
+  }));
+};
+
 
   /* UPLOAD, DRAG & DROP, REMOVE PHOTOS */
-  const [photos, setPhotos] = useState([]);
 
   const handleUploadPhotos = (e) => {
     const newPhotos = e.target.files;
@@ -97,62 +99,108 @@ const CreateListing = () => {
   const creatorId = user?._id;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!creatorId) {
-      navigate("/login");
+  const { listingId } = useParams();
+
+    useEffect(() => {
+    const fetchListing = async () => {
+        const res = await fetch(`http://localhost:3001/properties/${listingId}`);
+        const data = await res.json();
+        setListingData(data);
+    };
+    fetchListing();
+    }, [listingId]);
+
+    useEffect(() => {
+  if (listingData) {
+    setFormLocation({
+      streetAddress: listingData.streetAddress || "",
+      aptSuite: listingData.aptSuite || "",
+      city: listingData.city || "",
+      province: listingData.province || "",
+      country: listingData.country || "",
+    });
+
+    setFormDescription({
+      title: listingData.title || "",
+      description: listingData.description || "",
+      highlight: listingData.highlight || "",
+      highlightDesc: listingData.highlightDesc || "",
+      price: listingData.price || 0,
+    });
+
+    setGuestCount(listingData.guestCount || 1);
+    setBedroomCount(listingData.bedroomCount || 1);
+    setBedCount(listingData.bedCount || 1);
+    setBathroomCount(listingData.bathroomCount || 1);
+    setCategory(listingData.category || "");
+    setType(listingData.type || "");
+    setAmenities(listingData.amenities || []);
+  }
+}, [listingData]);
+
+
+
+  const handleUpdate = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+
+  // Manually append all updated fields
+  formData.append("creator", user?._id);
+  formData.append("category", category);
+  formData.append("type", type);
+  formData.append("streetAddress", formLocation.streetAddress);
+  formData.append("aptSuite", formLocation.aptSuite);
+  formData.append("city", formLocation.city);
+  formData.append("province", formLocation.province);
+  formData.append("country", formLocation.country);
+  formData.append("guestCount", guestCount);
+  formData.append("bedroomCount", bedroomCount);
+  formData.append("bedCount", bedCount);
+  formData.append("bathroomCount", bathroomCount);
+  formData.append("amenities", JSON.stringify(amenities));
+  formData.append("title", formDescription.title);
+  formData.append("description", formDescription.description);
+  formData.append("highlight", formDescription.highlight);
+  formData.append("highlightDesc", formDescription.highlightDesc);
+  formData.append("price", formDescription.price);
+
+  // Append new images
+  photos.forEach((photo) => {
+    formData.append("listingPhotos", photo);
+  });
+
+  // Append remaining old images (after deletion)
+  if (listingData?.listingPhotoPaths?.length > 0) {
+    listingData.listingPhotoPaths.forEach((path) => {
+      formData.append("existingPhotoPaths", path);
+    });
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3001/properties/${listingId}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (response.ok) {
+      navigate("/");
+    } else {
+      console.log("Update failed");
     }
-  }, [creatorId, navigate]);
+  } catch (err) {
+    console.error("Error:", err);
+  }
+};
 
-  const handlePost = async (e) => {
-    e.preventDefault();
 
-    try {
-      /* Create a new FormData onject to handle file uploads */
-      const listingForm = new FormData();
-      listingForm.append("creator", creatorId);
-      listingForm.append("category", category);
-      listingForm.append("type", type);
-      listingForm.append("streetAddress", formLocation.streetAddress);
-      listingForm.append("aptSuite", formLocation.aptSuite);
-      listingForm.append("city", formLocation.city);
-      listingForm.append("province", formLocation.province);
-      listingForm.append("country", formLocation.country);
-      listingForm.append("guestCount", guestCount);
-      listingForm.append("bedroomCount", bedroomCount);
-      listingForm.append("bedCount", bedCount);
-      listingForm.append("bathroomCount", bathroomCount);
-      listingForm.append("amenities", amenities);
-      listingForm.append("title", formDescription.title);
-      listingForm.append("description", formDescription.description);
-      listingForm.append("highlight", formDescription.highlight);
-      listingForm.append("highlightDesc", formDescription.highlightDesc);
-      listingForm.append("price", formDescription.price);
-
-      /* Append each selected photos to the FormData object */
-      photos.forEach((photo) => {
-        listingForm.append("listingPhotos", photo);
-      });
-
-      /* Send a POST request to server */
-      const response = await fetch("http://localhost:3001/properties/create", {
-        method: "POST",
-        body: listingForm,
-      });
-
-      if (response.ok) {
-        navigate("/");
-      }
-    } catch (err) {
-      console.log("Publish Listing failed", err.message);
-    }
-  };
   return (
     <>
       <Navbar />
 
       <div className="create-listing">
         <h1>Publish Your Place</h1>
-        <form onSubmit={handlePost}>
+        <form onSubmit={handleUpdate}>
           <div className="create-listing_step1">
             <h2>Step 1: Tell us about your place</h2>
             <hr />
@@ -386,85 +434,64 @@ const CreateListing = () => {
               ))}
             </div>
 
-            <h3>Add some photos of your place</h3>
+            <h3>Edit or Add Photos</h3>
+
+            <div className="photos">
+            {/* 1. Existing Photos from DB */}
+            {listingData?.listingPhotoPaths?.map((photo, index) => (
+                <div key={`existing-${index}`} className="photo">
+                <img src={`http://localhost:3001/${photo.replace("public", "")}`} alt="uploaded" />
+                <button type="button" onClick={() => {
+                    setListingData((prev) => ({
+                    ...prev,
+                    listingPhotoPaths: prev.listingPhotoPaths.filter((_, i) => i !== index),
+                    }));
+                }}>
+                    <BiTrash />
+                </button>
+                </div>
+            ))}
+
+            {/* 2. New Photos (drag & drop preview) */}
             <DragDropContext onDragEnd={handleDragPhoto}>
-              <Droppable droppableId="photos" direction="horizontal">
+                <Droppable droppableId="photos" direction="horizontal">
                 {(provided) => (
-                  <div
+                    <div
                     className="photos"
                     {...provided.droppableProps}
                     ref={provided.innerRef}
-                  >
-                    {photos.length < 1 && (
-                      <>
-                        <input
-                          id="image"
-                          type="file"
-                          style={{ display: "none" }}
-                          accept="image/*"
-                          onChange={handleUploadPhotos}
-                          multiple
-                        />
-                        <label htmlFor="image" className="alone">
-                          <div className="icon">
-                            <IoIosImages />
-                          </div>
-                          <p>Upload from your device</p>
-                        </label>
-                      </>
-                    )}
-
-                    {photos.length >= 1 && (
-                      <>
-                        {photos.map((photo, index) => {
-                          return (
-                            <Draggable
-                              key={index}
-                              draggableId={index.toString()}
-                              index={index}
+                    >
+                    {photos.map((photo, index) => (
+                        <Draggable
+                        key={`new-${index}`}
+                        draggableId={`photo-${index}`}
+                        index={index}
+                        >
+                        {(provided) => (
+                            <div
+                            className="photo"
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
                             >
-                              {(provided) => (
-                                <div
-                                  className="photo"
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                >
-                                  <img
-                                    src={URL.createObjectURL(photo)}
-                                    alt="place"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(index)}
-                                  >
-                                    <BiTrash />
-                                  </button>
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
-                        <input
-                          id="image"
-                          type="file"
-                          style={{ display: "none" }}
-                          accept="image/*"
-                          onChange={handleUploadPhotos}
-                          multiple
-                        />
-                        <label htmlFor="image" className="together">
-                          <div className="icon">
-                            <IoIosImages />
-                          </div>
-                          <p>Upload from your device</p>
-                        </label>
-                      </>
-                    )}
-                  </div>
+                            <img src={URL.createObjectURL(photo)} alt={`new-upload-${index}`} />
+                            <button type="button" onClick={() => handleRemovePhoto(index)}>
+                                <BiTrash />
+                            </button>
+                            </div>
+                        )}
+                        </Draggable>
+                    ))}
+                    {provided.placeholder}
+                    </div>
                 )}
-              </Droppable>
+                </Droppable>
             </DragDropContext>
+
+            {/* 3. Upload input for new photos */}
+            <input type="file" multiple onChange={handleUploadPhotos} />
+            </div>
+
 
             <h3>What make your place attractive and exciting?</h3>
             <div className="description">
@@ -519,7 +546,7 @@ const CreateListing = () => {
           </div>
 
           <button className="submit_btn" type="submit">
-            CREATE YOUR LISTING
+            UPDATE YOUR LISTING
           </button>
         </form>
       </div>

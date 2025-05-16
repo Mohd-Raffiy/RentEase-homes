@@ -1,0 +1,32 @@
+.static-page {
+  padding: 60px 80px;
+  background-color: #fffef6;
+  color: #2d2d2d;
+
+  h1 {
+    font-size: 30px;
+    color: #b76e79;
+    margin-bottom: 20px;
+  }
+
+  p {
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 15px;
+    max-width: 900px;
+  }
+
+  ul {
+    margin-left: 20px;
+    margin-bottom: 20px;
+
+    li {
+      margin-bottom: 12px;
+      line-height: 1.7;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 40px 20px;
+  }
+}

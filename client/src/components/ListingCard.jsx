@@ -24,8 +24,14 @@ const ListingCard = ({
   totalPrice,
   booking,
 }) => {
-  /* SLIDER FOR IMAGES */
   const [currentIndex, setCurrentIndex] = useState(0);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user);
+
+  const isOwner = user?._id === creator._id;
+  const wishList = user?.wishList || [];
+  const isLiked = wishList?.find((item) => item?._id === listingId);
 
   const goToPrevSlide = () => {
     setCurrentIndex(
@@ -38,29 +44,42 @@ const ListingCard = ({
     setCurrentIndex((prevIndex) => (prevIndex + 1) % listingPhotoPaths.length);
   };
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-
-  /* ADD TO WISHLIST */
-  const user = useSelector((state) => state.user);
-  const wishList = user?.wishList || [];
-
-  const isLiked = wishList?.find((item) => item?._id === listingId);
-
   const patchWishList = async () => {
-    if (user?._id !== creator._id) {
-    const response = await fetch(
-      `http://localhost:3001/users/${user?._id}/${listingId}`,
-      {
-        method: "PATCH",
-        header: {
-          "Content-Type": "application/json",
-        },
+    if (!isOwner) {
+      const response = await fetch(
+        `http://localhost:3001/users/${user?._id}/${listingId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      dispatch(setWishList(data.wishList));
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    const confirm = window.confirm("Are you sure you want to delete this listing?");
+    if (confirm) {
+      try {
+        const res = await fetch(`http://localhost:3001/properties/${listingId}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error("Delete failed", err);
       }
-    );
-    const data = await response.json();
-    dispatch(setWishList(data.wishList));
-  } else { return }
+    }
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    navigate(`/edit-listing/${listingId}`);
   };
 
   return (
@@ -85,7 +104,7 @@ const ListingCard = ({
                 className="prev-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  goToPrevSlide(e);
+                  goToPrevSlide();
                 }}
               >
                 <ArrowBackIosNew sx={{ fontSize: "15px" }} />
@@ -94,7 +113,7 @@ const ListingCard = ({
                 className="next-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  goToNextSlide(e);
+                  goToNextSlide();
                 }}
               >
                 <ArrowForwardIos sx={{ fontSize: "15px" }} />
@@ -127,6 +146,7 @@ const ListingCard = ({
         </>
       )}
 
+      {/* Wishlist Button */}
       <button
         className="favorite"
         onClick={(e) => {
@@ -141,6 +161,14 @@ const ListingCard = ({
           <Favorite sx={{ color: "white" }} />
         )}
       </button>
+
+      {/* Owner Action Buttons */}
+      {isOwner && (
+        <div className="listing-actions">
+          <button onClick={handleEdit}>Edit</button>
+          <button onClick={handleDelete}>Delete</button>
+        </div>
+      )}
     </div>
   );
 };

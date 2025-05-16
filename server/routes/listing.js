@@ -135,37 +135,48 @@ router.get("/:listingId", async (req, res) => {
   }
 })
 
-// ⭐ Submit a Review
-router.post("/:listingId/review", async (req, res) => {
+ // DELETE LISTING
+router.delete("/:listingId", async (req, res) => {
   try {
     const { listingId } = req.params;
-    const { customerId, rating, comment } = req.body;
-
-    const listing = await Listing.findById(listingId);
-    listing.reviews.push({ customerId, rating, comment });
-    await listing.save();
-
-    res.status(200).json({ message: "Review added", reviews: listing.reviews });
+    await Listing.findByIdAndDelete(listingId);
+    res.status(200).json({ message: "Listing deleted successfully." });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to delete listing", error: err.message });
   }
 });
 
-// ⚠️ Report Listing
-router.post("/:listingId/report", async (req, res) => {
+// UPDATE LISTING
+router.put("/:listingId", upload.array("listingPhotos"), async (req, res) => {
   try {
     const { listingId } = req.params;
-    const { reporterId, reason } = req.body;
 
-    const listing = await Listing.findById(listingId);
-    listing.reports.push({ reporterId, reason });
-    await listing.save();
+    const listingPhotoPaths = req.files.map((file) => file.path);
+    const existingPhotoPaths = req.body.existingPhotoPaths;
 
-    res.status(200).json({ message: "Report submitted", reports: listing.reports });
+    const finalPhotoPaths = [
+      ...(Array.isArray(existingPhotoPaths)
+        ? existingPhotoPaths
+        : existingPhotoPaths ? [existingPhotoPaths] : []),
+      ...listingPhotoPaths,
+    ];
+
+    const updatedData = {
+      ...req.body,
+      listingPhotoPaths: finalPhotoPaths,
+      amenities: JSON.parse(req.body.amenities),
+    };
+
+    const updatedListing = await Listing.findByIdAndUpdate(listingId, updatedData, {
+      new: true,
+    });
+
+    res.status(200).json(updatedListing);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to update listing", error: err.message });
   }
 });
+
 
 
 module.exports = router
