@@ -7,10 +7,8 @@ import {
   GiCaveEntrance,
   GiForestCamp,
   GiIsland,
-  GiWindmill,
 } from "react-icons/gi";
 import {
-  FaSkiing,
   FaPumpSoap,
   FaShower,
   FaFireExtinguisher,
@@ -50,16 +48,22 @@ export const categories = [
     icon: <BiWorld />,
   },
   {
+    img: "assets/shared_room.jpg",
+    label: "Shared Room",
+    icon: <FaPeopleRoof />,
+    description: "This property has shared room!",
+  },
+  {
+    img: "assets/rooms.jpg",
+    label: "Rooms",
+    icon: <BsFillDoorOpenFill  />,
+    description: "This property is has rooms!",
+  },
+  {
     img: "assets/beach_cat.jpg",
     label: "Beachfront",
     icon: <TbBeach />,
     description: "This property is close to the beach!",
-  },
-  {
-    img: "assets/windmill_cat.webp",
-    label: "Windmills",
-    icon: <GiWindmill />,
-    description: "This property is has windmills!",
   },
   {
     img: "assets/modern_cat.webp",
@@ -90,12 +94,6 @@ export const categories = [
     label: "Lakefront",
     icon: <GiBoatFishing />,
     description: "This property is near a lake!",
-  },
-  {
-    img: "assets/skiing_cat.jpg",
-    label: "Ski-in/out",
-    icon: <FaSkiing />,
-    description: "This property has skiing activies!",
   },
   {
     img: "assets/castle_cat.webp",

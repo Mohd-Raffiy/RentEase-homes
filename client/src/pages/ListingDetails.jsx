@@ -68,11 +68,12 @@ const ListingDetails = () => {
 
 const handleReport = async (e) => {
   e.preventDefault();
-  const res = await fetch(`http://localhost:3001/properties/${listingId}/report`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ reporterId: customerId, reason }),
-  });
+  const res = await fetch(`http://localhost:3001/api/report/${listingId}/report`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ reporterId: customerId, reason }),
+});
+
   if (res.ok) {
     setReason("");
     alert("Report submitted");
